@@ -29,6 +29,15 @@ YELLOW_LASER = pygame.image.load(os.path.join("assets", "pixel_laser_yellow.png"
 #Background
 BG = pygame.transform.scale(pygame.image.load(os.path.join("assets", "background-black.png")), (WIDTH, HEIGHT))
 
+class Laser:
+	def __init__(self, x, y, img):
+		self.x = x
+		self.y = y
+		self.img = img
+		self.mask = pygame.mask
+
+
+
 class Ship:
 	def __init__(self, x, y, health=100):
 		self.x = x
@@ -80,6 +89,7 @@ def main():
 	level = 0
 	lives = 5
 	main_font = pygame.font.SysFont("comicsans", 50)
+	lost_font = pygame.font.SysFont("comicsans", 62)
 
 	enemies = []
 
@@ -94,6 +104,9 @@ def main():
 
 	clock = pygame.time.Clock()
 
+	lost = False
+	lost_count = 0
+
 	def redraw_window():
 		WIN.blit(BG, (0,0)) # win is a surface, and blit() takes one of the pygame images such as a ship or laser, and draws it to the WIN surface
 							# (0,0) is at the TOP-LEFT, not BOTTOM-LEFT like in Cartesian coordinates
@@ -106,18 +119,33 @@ def main():
 		for enemy in enemies:
 			enemy.draw(WIN)
 
-		player.draw(WIN)
+		player.draw(WIN) # draw PLAYER is after the draw of ENEMY, because we want the PLAYER to be visible on top of ENEMY
+
+		if lost:
+			lost_label = lost_font.render("You lost", 1, (255, 255, 255))
+			WIN.blit(lost_label, (WIDTH/2 - lost_label.get_width()/2, 350))
 
 		pygame.display.update() #refreshes the display
 
 	while run:
 		clock.tick(FPS) # to ensure game stays consistent regardless of the device being used
+		redraw_window()
 		
-		if len(enemies)==0:
-			level += 1
-			wave_length += 5
+		if lives <= 0 or player.health <= 0:
+			lost = True
+			lost_count += 1
+
+		if lost:
+			if lost_count  > FPS * 3: # once 3 seconds have passed, quit the game
+				run = False # ends game
+			else:
+				continue
+
+		if len(enemies)==0: # if no.enemies reach 0
+			level += 1 # increment level
+			wave_length += 5 # increment no. of enemies we'd have
 			for i in range(wave_length):
-				enemy = Enemy(random.randrange(50, WIDTH-100), random.randrange(-1500, -100), random.choice(["red", "green", "blue"]))
+				enemy = Enemy(random.randrange(50, WIDTH-100), random.randrange(-2222, -88), random.choice(["red", "green", "blue"]))
 				enemies.append(enemy)
 
 
@@ -136,7 +164,9 @@ def main():
 
 		for enemy in enemies:
 			enemy.move(enemy_vel)
+			if enemy.y + enemy.get_height() > HEIGHT: # if "this" enemy goes off the screen,
+				lives -= 1
+				enemies.remove(enemy) # remove enemy from the enemies list
 
-		redraw_window()
 
 main()
